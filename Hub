@@ -1,0 +1,379 @@
+-- ============================================
+-- HUS HUB - FULL SCRIPT
+-- Key: Siddharth1
+-- ============================================
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+local VirtualUser = game:GetService("VirtualUser")
+local LocalPlayer = Players.LocalPlayer
+
+local resetConn = nil
+
+-- ============================================
+-- ⚙️ CONFIG
+-- ============================================
+local CONFIG = {
+    ValidKey = "Siddharth1",
+    Title = "HUS HUB | Key System",
+    Subtitle = "Key chahiye to discord pe contact kar @oreo.fv",
+    PlaceholderText = "key daalo...",
+    KeyFile = "HUS_HUB_KEY.txt",
+    WebhookURL = "https://discord.com/api/webhooks/1554461459675619404/a9RAIWPd_vXviAhh1x1jwwf4VTVZ_B6zfKCAMSO1tNZ9-ondxldMFJe8VgFpkYllvr3E",
+    LogEnabled = true,
+}
+
+local function validateKey(k) return k == CONFIG.ValidKey end
+
+local function KeySaved()
+    local ok, d = pcall(function()
+        return isfile(CONFIG.KeyFile) and readfile(CONFIG.KeyFile)
+    end)
+    return ok and d == CONFIG.ValidKey
+end
+
+local function SaveKey()
+    pcall(function() writefile(CONFIG.KeyFile, CONFIG.ValidKey) end)
+end
+
+-- ============================================
+-- 🔔 DISCORD WEBHOOK LOGGER
+-- ============================================
+local function sendWebhookLog(title, message, color)
+    if not CONFIG.LogEnabled then return end
+    if CONFIG.WebhookURL == "YOUR_NEW_WEBHOOK_URL_HERE" then return end
+    task.spawn(function()
+        pcall(function()
+            local embed = {{
+                ["title"] = title,
+                ["description"] = message,
+                ["color"] = color or 3447003,
+                ["fields"] = {
+                    { ["name"] = "👤 Username", ["value"] = "`" .. LocalPlayer.Name .. "`", ["inline"] = true },
+                    { ["name"] = "🆔 User ID", ["value"] = "`" .. tostring(LocalPlayer.UserId) .. "`", ["inline"] = true },
+                    { ["name"] = "🎮 Game", ["value"] = "`" .. game.PlaceId .. "`", ["inline"] = true },
+                    { ["name"] = "🌐 Job ID", ["value"] = "`" .. (game.JobId ~= "" and game.JobId or "N/A") .. "`", ["inline"] = false }
+                },
+                ["footer"] = { ["text"] = "🔱 HUS HUB Logger • " .. os.date("%Y-%m-%d %H:%M:%S") }
+            }}
+            request({
+                Url = CONFIG.WebhookURL, Method = "POST",
+                Headers = { ["Content-Type"] = "application/json" },
+                Body = HttpService:JSONEncode({ username = "HUS HUB Logger", embeds = embed })
+            })
+        end)
+    end)
+end
+
+-- ============================================
+-- 🔔 SOUND
+-- ============================================
+local function PlayHubSound()
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://137096768206416"
+    sound.Volume = 5
+    sound.Parent = game:GetService("SoundService")
+    sound:Play()
+    game:GetService("Debris"):AddItem(sound, 5)
+end
+
+-- ============================================
+-- HUS HUB LOADER
+-- ============================================
+local function loadHusHub()
+
+    local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+    local function PlayClickSound()
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://91741510066624"
+        sound.Volume = 5
+        sound.Parent = game:GetService("SoundService")
+        sound:Play()
+        game:GetService("Debris"):AddItem(sound, 1)
+    end
+
+    local SAVE = {}
+    local DataFile = "HusHub.json"
+    local function LoadData()
+        pcall(function()
+            if writefile and isfile(DataFile) then
+                local data = HttpService:JSONDecode(readfile(DataFile))
+                if type(data) == "table" then
+                    for k, v in pairs(data) do SAVE[k] = v end
+                end
+            end
+        end)
+    end
+    local function SaveData()
+        pcall(function()
+            if writefile then writefile(DataFile, HttpService:JSONEncode(SAVE)) end
+        end)
+    end
+    local function Get(k, d) return SAVE[k] ~= nil and SAVE[k] or d end
+    local function Set(k, v) SAVE[k] = v; SaveData() end
+    LoadData()
+
+    local Window = Rayfield:CreateWindow({
+        Name = "🔱 HUS HUB",
+        LoadingTitle = "HUS HUB",
+        LoadingSubtitle = "Loading...",
+        Theme = "Amethyst",
+        ConfigurationSaving = { Enabled = true, FolderName = "HusHub", FileName = "Main" },
+        KeySystem = false
+    })
+
+    sendWebhookLog("🔱 Hub Loaded", "Player loaded **HUS HUB**", 5763719)
+
+    -- ============================================
+    -- 🔍 FIND REMOTES
+    -- ============================================
+    local HitRF, GrabRF = nil, nil
+    local bioRemote, bioColorRemote, nameRemote, nameColorRemote = nil, nil, nil, nil
+
+    local RemotesFolder = ReplicatedStorage:FindFirstChild("Remotes")
+    if RemotesFolder then
+        for _, v in pairs(RemotesFolder:GetChildren()) do
+            local n = v.Name:lower()
+            if n == "setrpname" or n == "updaterpname" or n == "setname" then nameRemote = v end
+            if n == "setrpnamecolor" or n == "updaterpnamecolor" or n == "setnamecolor" then nameColorRemote = v end
+        end
+    end
+
+    for _, child in pairs(ReplicatedStorage:GetDescendants()) do
+        if child:IsA("RemoteEvent") or child:IsA("RemoteFunction") then
+            local n = child.Name:lower()
+            if n == "hit" or n == "punch" then
+                HitRF = child
+            elseif n == "grab" then
+                GrabRF = child
+            elseif n == "updatebio" or n == "setbio" or n == "updatebioname" or n == "setbioname" then
+                bioRemote = child
+            elseif n == "updatebiocolor" or n == "setbiocolor" or n == "biocolor" then
+                bioColorRemote = child
+            elseif n == "setrpnamecolor" or n == "updaterpnamecolor" or n == "setnamecolor" then
+                if not nameColorRemote then nameColorRemote = child end
+            elseif n == "updaterpname" or n == "setrpname" or n == "setname" then
+                if not nameRemote then nameRemote = child end
+            end
+        end
+    end
+
+    -- ============================================
+    -- STATE
+    -- ============================================
+    local function parseList(str)
+        local t = {}
+        if str == "" then return t end
+        for w in str:gmatch("%S+") do table.insert(t, w:lower()) end
+        return t
+    end
+    local function isTarget(n, list)
+        if #list == 0 then return true end
+        for _, v in ipairs(list) do if n:lower():find(v, 1, true) then return true end end
+        return false
+    end
+    local function isSafe(n, list)
+        for _, v in ipairs(list) do if n:lower():find(v, 1, true) then return true end end
+        return false
+    end
+
+    local Toggles = {
+        GrabToVoid = false, GrabFromHead = false, VerticalOrbit = false, PulseOrbit = false,
+        ShowDistance = false, FPSBooster = false, AutoExitLowHP = false, DisableFightMode = false,
+        SpinPlayer = false, KillAura = false, SpamGrab = false, Hitbox = false,
+        AntiRag = true, AntiFling = false, AntiAFK = true, AntiVoid = false,
+        EscapeGrab = false, SpeedFlyEnabled = false, FlyActive = false, FlyMode = false,
+        Orbit = false, Headsit = false, Attach = false, MouthBang = false, Bang = false,
+        GlowBio = false, NameGlow = false, AutoTarget = false, TpGrabLoop = false, FastModeBang = false,
+    }
+    local Settings = {
+        VoidY = -200, VoidHoldTime = 3, AntiVoidMinY = -260, HeadGrabHeight = 3,
+        VerticalOrbitTopOffset = 3, VerticalOrbitBottomOffset = -3, VerticalOrbitSpeed = 1,
+        PulseOrbitMinRadius = 3, PulseOrbitMaxRadius = 60, PulseOrbitSpeed = 0.5,
+        KARange = 50, HitboxSize = 10,
+        KATargets = Get("KATargets", ""), KASafe = Get("KASafe", ""),
+        KAHealthStop = Get("KAHealthStop", 10),
+        WalkSpeed = 50, FlySpeed = 100, FlyHoldTime = 0.15,
+        BangTarget = "", BangSpeed = 1,
+        BioColorMode = "black_white", BioCustomColor = Color3.fromRGB(255, 255, 255),
+        BioSpeed = 5, BioText = "🔱 HUS HUB 🔱", RPNameText = "HUS",
+        LastRPColor = Color3.fromRGB(255, 255, 255),
+        GrabTarget1 = "", GrabTarget2 = "", GrabDistance = 3, AutoTargetRange = 50, SpinSpeed = 30,
+        GymPosition = Vector3.new(-107.13987731933594, 4.336757183074951, 580.064208984375),
+        AutoExitHPThreshold = 40, AutoExitReturnHP = 60, AutoExitSkyHeight = 500,
+        TargetUsername = "",
+    }
+
+    -- ============================================
+    -- ✨ GLOWING BIO + NAME SYSTEM
+    -- ============================================
+    local bioConn = nil
+    local lastBioColor = nil
+    local lastRPColor = nil
+    local rpNameSetOnce = false
+    local lastBioText = nil
+
+    local function applyBioText(text)
+        if not bioRemote then return end
+        if lastBioText == text then return end
+        lastBioText = text
+        pcall(function()
+            if bioRemote:IsA("RemoteFunction") then bioRemote:InvokeServer(text)
+            else bioRemote:FireServer(text) end
+        end)
+    end
+
+    local function applyBioColor(color)
+        if not bioColorRemote then return end
+        pcall(function()
+            if bioColorRemote:IsA("RemoteFunction") then bioColorRemote:InvokeServer(color)
+            else bioColorRemote:FireServer(color) end
+        end)
+    end
+
+    local function applyRPNameTextOnce(text)
+        if not nameRemote then return end
+        if rpNameSetOnce then return end
+        rpNameSetOnce = true
+        pcall(function()
+            if nameRemote:IsA("RemoteFunction") then nameRemote:InvokeServer(text)
+            else nameRemote:FireServer(text) end
+        end)
+    end
+
+    local function applyRPNameColorOnly(color)
+        if not nameColorRemote then return end
+        if lastRPColor == color then return end
+        lastRPColor = color
+        pcall(function()
+            if nameColorRemote:IsA("RemoteFunction") then nameColorRemote:InvokeServer(color)
+            else nameColorRemote:FireServer(color) end
+        end)
+    end
+
+    local function applyBioColorOnly(color)
+        if lastBioColor == color then return end
+        lastBioColor = color
+        applyBioColor(color)
+    end
+
+    local function applyColors(color)
+        applyBioColorOnly(color)
+        if Toggles.NameGlow then applyRPNameColorOnly(color) end
+    end
+
+    local function startGlowBio()
+        if bioConn then bioConn:Disconnect() end
+        applyBioText(Settings.BioText)
+        if Toggles.NameGlow then applyRPNameTextOnce(Settings.RPNameText) end
+
+        local hue = 0
+        local toggleState = false
+        local lastToggleSwitch = 0
+
+        bioConn = RunService.Heartbeat:Connect(function(dt)
+            if not Toggles.GlowBio then return end
+
+            local now = tick()
+            local speed = Settings.BioSpeed
+            local mode = Settings.BioColorMode
+
+            local function alternate(colorA, colorB)
+                local switchInterval = 1 / math.max(speed, 0.1)
+                if now - lastToggleSwitch >= switchInterval then
+                    toggleState = not toggleState
+                    lastToggleSwitch = now
+                end
+                if toggleState then applyColors(colorA)
+                else applyColors(colorB) end
+            end
+
+            if mode == "black_white" then alternate(Color3.fromRGB(0, 0, 0), Color3.fromRGB(255, 255, 255))
+            elseif mode == "rainbow" then
+                hue = (hue + (speed * 0.5 * dt)) % 1
+                applyColors(Color3.fromHSV(hue, 1, 1))
+            elseif mode == "police" then alternate(Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 0, 255))
+            elseif mode == "orange_black" then alternate(Color3.fromRGB(255, 140, 0), Color3.fromRGB(0, 0, 0))
+            elseif mode == "purple_blue" then alternate(Color3.fromRGB(160, 32, 240), Color3.fromRGB(0, 100, 255))
+            elseif mode == "yellow_green" then alternate(Color3.fromRGB(255, 240, 0), Color3.fromRGB(0, 255, 50))
+            elseif mode == "red_black" then alternate(Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 0, 0))
+            elseif mode == "pink_cyan" then alternate(Color3.fromRGB(255, 105, 180), Color3.fromRGB(0, 255, 255))
+            elseif mode == "gold_silver" then alternate(Color3.fromRGB(255, 215, 0), Color3.fromRGB(192, 192, 192))
+            elseif mode == "neon_green" then alternate(Color3.fromRGB(0, 255, 0), Color3.fromRGB(0, 100, 0))
+            elseif mode == "lava" then alternate(Color3.fromRGB(255, 60, 0), Color3.fromRGB(255, 200, 0))
+            elseif mode == "ice" then alternate(Color3.fromRGB(150, 220, 255), Color3.fromRGB(255, 255, 255))
+            elseif mode == "galaxy" then alternate(Color3.fromRGB(75, 0, 130), Color3.fromRGB(255, 20, 147))
+            elseif mode == "matrix" then alternate(Color3.fromRGB(0, 255, 0), Color3.fromRGB(0, 0, 0))
+            elseif mode == "blood" then alternate(Color3.fromRGB(139, 0, 0), Color3.fromRGB(255, 0, 0))
+            elseif mode == "toxic" then alternate(Color3.fromRGB(57, 255, 20), Color3.fromRGB(150, 255, 0))
+            elseif mode == "sunset" then alternate(Color3.fromRGB(255, 94, 77), Color3.fromRGB(255, 154, 0))
+            elseif mode == "ocean" then alternate(Color3.fromRGB(0, 105, 148), Color3.fromRGB(72, 209, 204))
+            elseif mode == "royal" then alternate(Color3.fromRGB(75, 0, 130), Color3.fromRGB(255, 215, 0))
+            elseif mode == "cyberpunk" then alternate(Color3.fromRGB(255, 0, 255), Color3.fromRGB(0, 255, 255))
+            elseif mode == "flamingo" then alternate(Color3.fromRGB(255, 105, 180), Color3.fromRGB(255, 182, 193))
+            elseif mode == "mint" then alternate(Color3.fromRGB(152, 255, 152), Color3.fromRGB(0, 200, 130))
+            elseif mode == "candy" then alternate(Color3.fromRGB(255, 105, 180), Color3.fromRGB(135, 206, 250))
+            elseif mode == "peach" then alternate(Color3.fromRGB(255, 170, 120), Color3.fromRGB(255, 218, 185))
+            elseif mode == "emerald" then alternate(Color3.fromRGB(0, 168, 107), Color3.fromRGB(50, 205, 50))
+            elseif mode == "midnight" then alternate(Color3.fromRGB(25, 25, 112), Color3.fromRGB(72, 61, 139))
+            elseif mode == "rose_gold" then alternate(Color3.fromRGB(255, 105, 180), Color3.fromRGB(255, 200, 100))
+            elseif mode == "arctic" then alternate(Color3.fromRGB(200, 240, 255), Color3.fromRGB(100, 180, 220))
+            elseif mode == "fireball" then alternate(Color3.fromRGB(255, 69, 0), Color3.fromRGB(255, 255, 100))
+            elseif mode == "venom" then alternate(Color3.fromRGB(50, 205, 50), Color3.fromRGB(75, 0, 130))
+            elseif mode == "cotton_candy" then alternate(Color3.fromRGB(255, 180, 220), Color3.fromRGB(180, 220, 255))
+            elseif mode == "dark_ocean" then alternate(Color3.fromRGB(0, 30, 60), Color3.fromRGB(0, 90, 120))
+            elseif mode == "cherry" then alternate(Color3.fromRGB(200, 0, 50), Color3.fromRGB(255, 100, 120))
+            elseif mode == "golden_fire" then alternate(Color3.fromRGB(255, 200, 0), Color3.fromRGB(255, 80, 0))
+            elseif mode == "deep_sea" then alternate(Color3.fromRGB(0, 40, 80), Color3.fromRGB(0, 180, 200))
+            elseif mode == "lavender" then alternate(Color3.fromRGB(180, 150, 255), Color3.fromRGB(230, 200, 255))
+            elseif mode == "copper" then alternate(Color3.fromRGB(184, 115, 51), Color3.fromRGB(255, 160, 100))
+            elseif mode == "plasma" then alternate(Color3.fromRGB(255, 0, 200), Color3.fromRGB(0, 255, 255))
+            elseif mode == "volcano" then alternate(Color3.fromRGB(60, 0, 0), Color3.fromRGB(255, 50, 0))
+            elseif mode == "aurora" then alternate(Color3.fromRGB(0, 255, 150), Color3.fromRGB(150, 0, 255))
+            elseif mode == "sakura" then alternate(Color3.fromRGB(255, 183, 197), Color3.fromRGB(255, 220, 230))
+            elseif mode == "neon_pink" then alternate(Color3.fromRGB(255, 0, 150), Color3.fromRGB(255, 100, 200))
+            elseif mode == "radioactive" then alternate(Color3.fromRGB(200, 255, 0), Color3.fromRGB(0, 255, 80))
+            elseif mode == "stealth" then alternate(Color3.fromRGB(20, 20, 20), Color3.fromRGB(60, 60, 60))
+            elseif mode == "golden_royal" then alternate(Color3.fromRGB(255, 215, 0), Color3.fromRGB(138, 43, 226))
+            elseif mode == "silver_frost" then alternate(Color3.fromRGB(220, 230, 240), Color3.fromRGB(130, 160, 200))
+            elseif mode == "tropical" then alternate(Color3.fromRGB(0, 255, 180), Color3.fromRGB(255, 255, 0))
+            elseif mode == "red_white_blue" then alternate(Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 0, 255))
+            elseif mode == "green_white_orange" then alternate(Color3.fromRGB(0, 150, 0), Color3.fromRGB(255, 120, 0))
+            elseif mode == "halloween" then alternate(Color3.fromRGB(255, 100, 0), Color3.fromRGB(80, 0, 120))
+            elseif mode == "toxic_waste" then alternate(Color3.fromRGB(127, 255, 0), Color3.fromRGB(75, 0, 130))
+            elseif mode == "cherry_blossom" then alternate(Color3.fromRGB(255, 183, 197), Color3.fromRGB(255, 105, 180))
+            elseif mode == "electric_blue" then alternate(Color3.fromRGB(0, 191, 255), Color3.fromRGB(0, 100, 255))
+            elseif mode == "sunset_orange" then alternate(Color3.fromRGB(255, 140, 0), Color3.fromRGB(255, 69, 0))
+            elseif mode == "purple_rain" then alternate(Color3.fromRGB(138, 43, 226), Color3.fromRGB(75, 0, 130))
+            elseif mode == "gold_rush" then alternate(Color3.fromRGB(255, 215, 0), Color3.fromRGB(218, 165, 32))
+            elseif mode == "red_alert" then alternate(Color3.fromRGB(255, 0, 0), Color3.fromRGB(139, 0, 0))
+            elseif mode == "cyan_fire" then alternate(Color3.fromRGB(0, 255, 255), Color3.fromRGB(0, 150, 150))
+            elseif mode == "magenta_blast" then alternate(Color3.fromRGB(255, 0, 255), Color3.fromRGB(128, 0, 128))
+            elseif mode == "mint_condition" then alternate(Color3.fromRGB(152, 255, 152), Color3.fromRGB(0, 168, 107))
+            elseif mode == "vaporwave" then alternate(Color3.fromRGB(255, 113, 206), Color3.fromRGB(1, 205, 254))
+            elseif mode == "black_ops" then alternate(Color3.fromRGB(0, 0, 0), Color3.fromRGB(40, 40, 40))
+            elseif mode == "white_heat" then alternate(Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 200, 200))
+            elseif mode == "green_screen" then alternate(Color3.fromRGB(0, 255, 0), Color3.fromRGB(0, 128, 0))
+            elseif mode == "blue_ice" then alternate(Color3.fromRGB(0, 0, 255), Color3.fromRGB(173, 216, 230))
+            elseif mode == "hot_pink" then alternate(Color3.fromRGB(255, 0, 102), Color3.fromRGB(255, 105, 180))
+            elseif mode == "dragon_fire" then alternate(Color3.fromRGB(255, 0, 0), Color3.fromRGB(255, 215, 0))
+            elseif mode == "void_walker" then alternate(Color3.fromRGB(20, 0, 40), Color3.fromRGB(80, 0, 120))
+            elseif mode == "rainbow_fast" then
+                hue = (hue + (speed * 2.0 * dt)) % 1
+                applyColors(Color3.fromHSV(hue, 1, 1))
+            elseif mode == "rainbow_slow" then
+                hue = (hue + (speed * 0.1 * dt)) % 1
+                applyColors(Color3.fromHSV(hue, 1, 1))
+            elseif mode == "pastel_rainbow" then
+                hue = (hue + (speed * 0.4 * dt)) % 1
+                applyColors(Color3.fromHSV(hue, 0.35, 1))
+            elseif mode == "dark_rainbow" then
+                hue = (hue + (speed * 0.3 * dt)) % 1
+                applyColors(Color3.fromHSV(hue, 1, 0.5))
+            elseif mode == "christmas" then alternate(Color3.fromRGB(255, 0, 0), Color3.fromRGB(0, 255, 0))
+       
